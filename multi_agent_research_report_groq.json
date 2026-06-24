@@ -1,0 +1,324 @@
+{
+  "name": "Multi-Agent Research & Report Generator (Groq)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [180, 300],
+      "webhookId": "telegram-webhook-001",
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-cred-id",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $input.first().json.message;\nconst chatId = message.chat.id;\nconst text = message.text || '';\n\nreturn [{\n  json: {\n    chatId: chatId,\n    topic: text,\n    username: message.from.first_name || 'User'\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Extract Topic & Chat ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "🔍 Got it! Researching *{{ $json.topic }}*...\n\nMy agents are working on it:\n✅ Agent 1: Web Research\n⏳ Agent 2: Statistics Finder\n⏳ Agent 3: Expert Insights\n⏳ Agent 4: Report Compiler\n\n_Please wait 1-2 minutes..._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Send Acknowledgement",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [620, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-cred-id",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Agent 1 - a Web Research Specialist. Your job is to provide a comprehensive overview of a given topic. Include: 1) What it is (definition/background), 2) Current state/recent developments (2023-2025), 3) Key players or organizations involved, 4) Main challenges or controversies. Be factual, concise, and informative. Write in 3-4 paragraphs.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Research this topic thoroughly: {{ $('Extract Topic & Chat ID').item.json.topic }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1024\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Agent 1 - Web Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 520],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "groq-cred-id",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Agent 2 - a Statistics & Data Specialist. Your job is to find and present key statistics, numbers, market data, and factual figures related to a topic. Include: 1) Market size or scale data, 2) Growth rates or trends (with years), 3) Usage/adoption statistics, 4) Comparative numbers (global vs regional). Format as a structured list with clear labels. Use realistic, well-known statistics.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Find key statistics and data for this topic: {{ $('Extract Topic & Chat ID').item.json.topic }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1024\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Agent 2 - Statistics Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "groq-cred-id",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Agent 3 - an Expert Insights Specialist. Your job is to provide expert perspectives, opinions, and future outlook on a topic. Include: 1) What industry experts say about this topic, 2) Pros and cons from expert viewpoints, 3) Future predictions and trends, 4) Actionable recommendations or implications. Write as if summarizing insights from thought leaders in the field.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Provide expert insights and future outlook for this topic: {{ $('Extract Topic & Chat ID').item.json.topic }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1024\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Agent 3 - Expert Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 880],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "groq-cred-id",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const topic = $('Extract Topic & Chat ID').item.json.topic;\nconst chatId = $('Extract Topic & Chat ID').item.json.chatId;\nconst username = $('Extract Topic & Chat ID').item.json.username;\n\n// Extract text from Groq response structure: choices[0].message.content\nconst agent1 = $('Agent 1 - Web Research').item.json.choices[0].message.content;\nconst agent2 = $('Agent 2 - Statistics Finder').item.json.choices[0].message.content;\nconst agent3 = $('Agent 3 - Expert Insights').item.json.choices[0].message.content;\n\nreturn [{\n  json: {\n    chatId,\n    username,\n    topic,\n    webResearch: agent1,\n    statistics: agent2,\n    expertInsights: agent3\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Merge All Agent Outputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Agent 4 - a Professional Report Compiler. You receive research from 3 specialist agents and compile it into a clean, structured 2-page research report. Format the report in clean Markdown with the following sections:\\n\\n# Research Report: [Topic]\\n\\n## 1. Executive Summary\\n(2-3 sentences overview)\\n\\n## 2. Overview & Background\\n(from web research agent)\\n\\n## 3. Key Statistics & Data\\n(from statistics agent - use bullet points)\\n\\n## 4. Expert Insights & Future Outlook\\n(from expert insights agent)\\n\\n## 5. Key Takeaways\\n(3-5 bullet points summarizing the most important findings)\\n\\n---\\nReport generated by Multi-Agent Research System (Powered by Groq + LLaMA 3.3)\\n\\nMake it professional, well-structured, and easy to read.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Compile a full research report on the topic: {{ $json.topic }}\\n\\n--- AGENT 1 OUTPUT (Web Research) ---\\n{{ $json.webResearch }}\\n\\n--- AGENT 2 OUTPUT (Statistics) ---\\n{{ $json.statistics }}\\n\\n--- AGENT 3 OUTPUT (Expert Insights) ---\\n{{ $json.expertInsights }}\"\n    }\n  ],\n  \"temperature\": 0.5,\n  \"max_tokens\": 2048\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Agent 4 - Report Compiler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 700],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "groq-cred-id",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract final report from Groq response\nconst report = $('Agent 4 - Report Compiler').item.json.choices[0].message.content;\nconst chatId = $('Merge All Agent Outputs').item.json.chatId;\nconst topic = $('Merge All Agent Outputs').item.json.topic;\n\n// Split report into chunks of 4000 chars for Telegram's message limit\nconst chunkSize = 4000;\nconst chunks = [];\nfor (let i = 0; i < report.length; i += chunkSize) {\n  chunks.push(report.substring(i, i + chunkSize));\n}\n\nreturn chunks.map((chunk, index) => ({\n  json: {\n    chatId,\n    topic,\n    chunk,\n    partNumber: index + 1,\n    totalParts: chunks.length,\n    isFirst: index === 0,\n    isLast: index === chunks.length - 1,\n    fullReport: report\n  }\n}));"
+      },
+      "id": "a1b2c3d4-0009-0009-0009-000000000009",
+      "name": "Split Report into Chunks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 700]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.isFirst ? '📄 *Your Research Report is Ready!*\\n\\n' : '' }}{{ $json.chunk }}{{ $json.isLast ? '\\n\\n✅ *Report Complete! Powered by Groq + LLaMA 3.3*' : '' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a1b2c3d4-0010-0010-0010-000000000010",
+      "name": "Send Report via Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1420, 700],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-cred-id",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE"
+        },
+        "sheetName": {
+          "value": "Reports Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ new Date().toISOString() }}",
+            "Username": "={{ $('Merge All Agent Outputs').item.json.username }}",
+            "Topic": "={{ $('Merge All Agent Outputs').item.json.topic }}",
+            "Report": "={{ $('Agent 4 - Report Compiler').item.json.choices[0].message.content }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0011-0011-0011-000000000011",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1420, 900],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-cred-id",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [{ "node": "Extract Topic & Chat ID", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Topic & Chat ID": {
+      "main": [
+        [
+          { "node": "Send Acknowledgement", "type": "main", "index": 0 },
+          { "node": "Agent 1 - Web Research", "type": "main", "index": 0 },
+          { "node": "Agent 2 - Statistics Finder", "type": "main", "index": 0 },
+          { "node": "Agent 3 - Expert Insights", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Agent 1 - Web Research": {
+      "main": [
+        [{ "node": "Merge All Agent Outputs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Agent 2 - Statistics Finder": {
+      "main": [
+        [{ "node": "Merge All Agent Outputs", "type": "main", "index": 1 }]
+      ]
+    },
+    "Agent 3 - Expert Insights": {
+      "main": [
+        [{ "node": "Merge All Agent Outputs", "type": "main", "index": 2 }]
+      ]
+    },
+    "Merge All Agent Outputs": {
+      "main": [
+        [{ "node": "Agent 4 - Report Compiler", "type": "main", "index": 0 }]
+      ]
+    },
+    "Agent 4 - Report Compiler": {
+      "main": [
+        [{ "node": "Split Report into Chunks", "type": "main", "index": 0 }]
+      ]
+    },
+    "Split Report into Chunks": {
+      "main": [
+        [
+          { "node": "Send Report via Telegram", "type": "main", "index": 0 },
+          { "node": "Log to Google Sheets", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "versionId": "multi-agent-groq-v1"
+}

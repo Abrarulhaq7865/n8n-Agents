@@ -1,0 +1,282 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "ATS Resume Scanner",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "JD(Job Description)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Resume",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b7c2542c-61c4-4c0b-b896-20a3137bdf10",
+      "name": "On form submission",
+      "webhookId": "2620b3c4-8ff6-4672-9098-658cc17336aa"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=Resume",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3680d737-882c-4757-b28e-0cb3a939e189",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        -176
+      ],
+      "id": "3d9d4b87-4553-43e5-8aa8-5e299ae31057",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the combined data from your Merge node\nconst mergedData = $input.first().json;\n\n// Create a new, clean output format for Gemini\nreturn [{\n  json: {\n    job_description: mergedData['JD(Job Description)'],\n    resume_text: mergedData.text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -176
+      ],
+      "id": "38e07daa-7ead-46d3-b499-4cc1cf1513b8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Act as an expert ATS Resume Scanner. I am providing you with a Job Description and a candidate's Resume.\n\n**JOB DESCRIPTION:**\n{{ $json.job_description }}\n\n**RESUME TEXT:**\n{{ $json.resume_text }}\n\n**YOUR TASK:**\nPlease analyze the match and provide a structured JSON response. Do not include any formatting blocks (like ```json). Just output the raw JSON object using these exact keys:\n\n{\n  \"Score\": \"The match percentage (e.g., 75%)\",\n  \"Keywords\": \"A comma-separated list of 3-5 missing keywords\",\n  \"Feedback\": \"A brief, 2-sentence paragraph on how to improve\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        -176
+      ],
+      "id": "0b8ee99b-e32b-4159-b9e9-46ce83ee0145",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "uNepjIfW2zbV5snt",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11ljCq8iXRLz_K2xS3Uyna0h-YVdtr21JAoY4r9lXiZM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "score": "={{ $json.Score }}",
+            "keywords": "={{ $json.Keywords }}",
+            "feedback": "={{ $json.Feedback }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "keywords",
+              "displayName": "keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        -176
+      ],
+      "id": "949a55dd-8a14-4950-a061-d66062ae28b2",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Y8A7yyYmrYYLqZRb",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $input.first().json.content.parts[0].text;\n\nconst parsedData = JSON.parse(rawText);\n\nreturn [{ json: parsedData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        48
+      ],
+      "id": "39439b1a-7ff9-4504-905d-e09bdf895097",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ad54f0e8-6491-473f-a095-59188e82cfe6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "950daff4b0bc26e5b3e40b20ab2f5a1f428b31945abdea3becbc4043a51d0c5a"
+  },
+  "id": "UT7T1zPE74rlDt90",
+  "tags": []
+}

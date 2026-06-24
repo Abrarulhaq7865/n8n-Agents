@@ -1,0 +1,277 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1EFrYRrlC5Vu36F-PxwvsJfdY2fYdkX14",
+          "mode": "list",
+          "cachedResultName": "attendance1.csv",
+          "cachedResultUrl": "https://drive.google.com/file/d/1EFrYRrlC5Vu36F-PxwvsJfdY2fYdkX14/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -208,
+        16
+      ],
+      "id": "eef5ff54-07a3-4275-a087-1126704c90a7",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "BNdIQvp4LBD4HHTE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        32
+      ],
+      "id": "b3cb3ef8-47d1-4250-b0b8-64a83e9076ae",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Senior Attendance Auditor. Analyze the following student record from the input data:\n\n- Name: {{ $json.Name }}\n- Current Percentage: {{ $json.Sem_Attended }}%\n- Email: {{ $json.Email }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        464,
+        16
+      ],
+      "id": "b11b3976-a863-45f8-abf6-f91e089bb775",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        336,
+        224
+      ],
+      "id": "d3a8ad2a-07fa-4851-a440-4ab7da9b5e12",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "BPwtmqAUq1yf6syx",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        16
+      ],
+      "id": "d1c5cb4c-98da-4554-9daf-b3ece8324d25",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Multi-Lingual Outreach Specialist. You have received an Audit Report for {{ $json.output }}.\n\nTASK: Draft a polite but urgent WhatsApp message for this student. Use the student's name and percentage from the report. Write the message body entirely in English. Ensure the tone is helpful.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        816,
+        16
+      ],
+      "id": "ba604cce-3180-4c9d-b422-90e56bbc7d47",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        688,
+        224
+      ],
+      "id": "f28152c8-59a1-47df-bd62-a5d0d95c3d8f",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "BPwtmqAUq1yf6syx",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "smohdabrarulhaq@gmail.com",
+        "toEmail": "={{ $('Extract from File').item.json.Email }}",
+        "subject": "Your attendance report",
+        "emailFormat": "text",
+        "text": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1168,
+        16
+      ],
+      "id": "a7a35cd9-a11c-4ba9-8673-d9d8c0db2115",
+      "name": "Send an Email",
+      "webhookId": "5deb5f51-4ab5-4ccf-9cdb-7e87b18a9de1",
+      "credentials": {
+        "smtp": {
+          "id": "mXrn9sD1ROkQxf0S",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -48
+      ],
+      "id": "bc7ad9a6-3271-4065-b735-8929ca700a17",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "66e7bbb2-af68-4397-9e73-5784cf616562",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "950daff4b0bc26e5b3e40b20ab2f5a1f428b31945abdea3becbc4043a51d0c5a"
+  },
+  "id": "czmca9rcc7uBjt9I",
+  "tags": []
+}
